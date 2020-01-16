@@ -15,18 +15,18 @@ class CreateTeamsTable extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->integer('id');
-            $table->string('name');
-            $table->string('shortName');
-            $table->string('tla');
+            $table->string('name')->nullable();
+            $table->string('shortName')->nullable();
+            $table->string('tla')->nullable();
             $table->string('crestUrl')->nullable();
-            $table->string('address');
-            $table->string('phone');
-            $table->string('website');
+            $table->string('address')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('website')->nullable();
             $table->string('email')->nullable();
-            $table->integer('founded');
-            $table->string('clubColors');
-            $table->string('venue');
-            $table->dateTime('lastUpdated');
+            $table->integer('founded')->nullable();
+            $table->string('clubColors')->nullable();
+            $table->string('venue')->nullable();
+            $table->dateTime('lastUpdated')->nullable();
         });
     }
 

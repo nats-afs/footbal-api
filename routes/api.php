@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,4 +22,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::resource('competitions', 'CompetitionController');
 
-Route::resource('json-api', 'ApiController');
+Route::get('home', function () {
+    return (new Response(['name' => 'Abigail', 'state' => 'CA'], 200))
+                  ->header('Content-Type', 'application/json;charset=UTF-8');
+});
