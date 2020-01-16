@@ -22,7 +22,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::resource('competitions', 'CompetitionController');
 
-Route::get('home', function () {
-    return (new Response(['name' => 'Abigail', 'state' => 'CA'], 200))
-                  ->header('Content-Type', 'application/json;charset=UTF-8');
-});
+Route::resource('teams', 'TeamController');
+
+Route::resource('players', 'PlayerController');

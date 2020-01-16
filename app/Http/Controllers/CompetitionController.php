@@ -45,6 +45,7 @@ class CompetitionController extends Controller
         $client = new Client();
         try {
             $response = $client->request('GET', $this->base_path.'competitions',$this->options);
+
             $body = json_decode($response->getBody());
             return Response::json($body,200)->header('Content-Type', 'application/json;charset=UTF-8');
         } catch (RequestException $e) {
@@ -101,55 +102,58 @@ class CompetitionController extends Controller
     {
         // $client = resolve(Client::class);
         $client = new Client();
-
         try {
-            $response = $client->request('GET', $this->base_path.'competitions/'.$id,
-                 $this->options
-                );
+            $response = $client->request('GET', $this->base_path.'competitions/'.$id,$this->options);
+
             $body = json_decode($response->getBody());
 
-            $teamResponse = $client->request('GET', $this->base_path.'competitions/'.$id.'/teams', $this->options);
+                $teamResponse = $client->request('GET', $this->base_path.'competitions/'.$id.'/teams', $this->options);
 
-            $dataTeams = json_decode($teamResponse->getBody())->teams;
+                $counter = $teamResponse->getHeader('X-Requests-Available-Minute')[0];  
 
-            foreach($dataTeams as $dataTeam){
-                $team = new Team();
+                $dataTeams = array_slice(json_decode($teamResponse->getBody())->teams,1,6);
                 
-                $team-> id = $dataTeam->id;
-                $team-> name = $dataTeam->name;
-                $team-> shortName = $dataTeam->shortName;
-                $team-> tla = $dataTeam->tla;
-                $team-> crestUrl = $dataTeam->crestUrl;
-                $team-> address = $dataTeam->address;
-                $team-> phone = $dataTeam->phone;
-                $team-> website = $dataTeam->website;
-                $team-> email = $dataTeam->email;
-                $team-> founded = $dataTeam->founded;
-                $team-> clubColors = $dataTeam->clubColors;
-                $team-> venue = $dataTeam->venue;
-                $team-> lastUpdated = $dataTeam->lastUpdated;
-                $team->timestamps = false;
+                foreach($dataTeams as $dataTeam){
+                    $team = new Team();
+                    $team-> id = $dataTeam->id;
+                    $team-> name = $dataTeam->name;
+                    $team-> shortName = $dataTeam->shortName;
+                    $team-> tla = $dataTeam->tla;
+                    $team-> crestUrl = $dataTeam->crestUrl;
+                    $team-> address = $dataTeam->address;
+                    $team-> phone = $dataTeam->phone;
+                    $team-> website = $dataTeam->website;
+                    $team-> email = $dataTeam->email;
+                    $team-> founded = $dataTeam->founded;
+                    $team-> clubColors = $dataTeam->clubColors;
+                    $team-> venue = $dataTeam->venue;
+                    $team-> lastUpdated = $dataTeam->lastUpdated;
+                    $team->timestamps = false;
+    
+                    if(!DB::table('teams')->where('id',$dataTeam->id)->exists())
+                        $team->save();
 
-                if(!DB::table('teams')->where('id',$dataTeam->id)->exists())
-                    $team->save();
+                    // $counter = $teamResponse->getHeader('X-Requests-Available-Minute')[0];  
+                    
+                    $playerResponse = $client->request('GET',$this->base_path.'teams/'.$team->id, $this->options);
+                    
+                    // $counter = $playerResponse->getHeader('X-Requests-Available-Minute')[0]; 
 
-                $playerResponse = $client->request('GET',$this->base_path.'teams/'.$team->id, $this->options);
-                $squad = json_decode($playerResponse->getBody())->squad;
+                    $squad = json_decode($playerResponse->getBody())->squad;
 
-                foreach ($squad as $playerData) {
-                    $player = new Player();
-                    $player-> id = $playerData->id;
-                    $player-> name = $playerData->name;
-                    $player-> position = $playerData->position;
-                    $player-> shirtNumber = $playerData->shirtNumber;
-                    $player->timestamps = false;
-
-                    if(!DB::table('players')->where('id',$player->id)->exists()){
-                        $player->save();
+                    foreach ($squad as $playerData) {
+                        $player = new Player();
+                        $player-> id = $playerData->id;
+                        $player-> name = $playerData->name;
+                        $player-> position = $playerData->position;
+                        $player-> shirtNumber = $playerData->shirtNumber;
+                        $player->timestamps = false;
+    
+                        if(!DB::table('players')->where('id',$player->id)->exists()){
+                            $player->save();
+                        }
                     }
                 }
-
-            }
 
             return Response::json($body,200)->header('Content-Type', 'application/json;charset=UTF-8');
         } catch (RequestException $e) {
@@ -160,7 +164,9 @@ class CompetitionController extends Controller
                 if($errorCode == 429){
                     if($e->getResponse()->hasHeader('X-RequestCounter-Reset'))
                         $waitFor = $e->getResponse()->getHeader('X-RequestCounter-Reset')[0];
-                    return Response::json(['message'=>"Excediste el limite de consultas de tu plan free, espera por $waitFor segundos para reintentarlo",'error'=> 429],429)->header('Content-Type', 'application/json;charset=UTF-8');
+                    return Response::json([
+                            'message'=>"Excediste el limite de consultas de tu plan free, espera por $waitFor segundos para reintentarlo",
+                            'error'=> 429],429)->header('Content-Type', 'application/json;charset=UTF-8');
                 }
                 elseif($errorCode == 404)
                     return Response::json(['message'=>'El recurso al que intentas acceder no existe','error'=> 403],403)->header('Content-Type', 'application/json;charset=UTF-8');
